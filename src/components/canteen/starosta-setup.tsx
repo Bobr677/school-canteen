@@ -82,7 +82,7 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
         <div className="mt-4 grid gap-5 sm:grid-cols-2">
           {/* Придумайте код */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex min-h-[32px] items-center justify-between">
               <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
                 Код-пароль
               </span>
@@ -115,9 +115,11 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
 
           {/* Повторите код */}
           <div className="space-y-2">
-            <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
-              Повторите код
-            </span>
+            <div className="flex min-h-[32px] items-center">
+              <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+                Повторите код
+              </span>
+            </div>
             <InputOTP
               maxLength={6}
               pattern={REGEXP_ONLY_DIGITS}
