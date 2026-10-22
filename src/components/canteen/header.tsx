@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ChefHat,
-  LogOut,
-  Sparkles,
-  UserCheck,
-  UtensilsCrossed,
-} from "lucide-react";
+import { ChefHat, LogOut, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -14,50 +8,49 @@ export type Role = "monitor" | "kitchen";
 
 interface HeaderProps {
   role: Role;
-  /** Класс старосты (показывается в бейдже) */
   classKey?: string;
   onLogout: () => void;
 }
 
 export function Header({ role, classKey, onLogout }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        {/* Логотип */}
+    <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-sm">
+      <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary shadow-md shadow-primary/30">
-            <UtensilsCrossed className="h-6 w-6 text-primary-foreground" aria-hidden />
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary text-lg font-black text-primary-foreground"
+            aria-hidden
+          >
+            О
           </div>
           <div className="min-w-0 leading-tight">
-            <div className="flex items-center gap-2">
+            <div className="flex items-baseline gap-2">
               <h1 className="truncate text-lg font-extrabold tracking-tight sm:text-xl">
                 ОбедКласс
               </h1>
-              <span className="hidden items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-accent-foreground sm:inline-flex">
-                <Sparkles className="h-3 w-3" aria-hidden />
-                макет дизайна
+              <span className="hidden shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground sm:inline">
+                макет
               </span>
             </div>
-            <p className="hidden truncate text-xs font-semibold text-muted-foreground sm:block">
-              заказы еды для школьной столовой
+            <p className="hidden font-hand text-base font-bold leading-none text-muted-foreground sm:block">
+              завтраки и обеды
             </p>
           </div>
         </div>
 
-        {/* Текущая роль + выход */}
         <div className="flex items-center gap-2">
           {role === "monitor" ? (
             <span
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1.5 text-xs font-extrabold text-primary"
+              className="inline-flex min-h-[32px] items-center gap-1.5 rounded-md border border-primary/30 bg-accent px-2.5 text-xs font-extrabold text-primary"
               title="Вы вошли как староста"
             >
               <UserCheck className="h-4 w-4" aria-hidden />
               <span className="hidden sm:inline">Староста</span>
-              {classKey && <span>· {classKey}</span>}
+              {classKey && <span>{classKey}</span>}
             </span>
           ) : (
             <span
-              className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-3 py-1.5 text-xs font-extrabold text-success"
+              className="inline-flex min-h-[32px] items-center gap-1.5 rounded-md border border-lunch/30 bg-lunch/10 px-2.5 text-xs font-extrabold text-lunch"
               title="Вы вошли как сотрудник столовой"
             >
               <ChefHat className="h-4 w-4" aria-hidden />
@@ -70,7 +63,7 @@ export function Header({ role, classKey, onLogout }: HeaderProps) {
             size="sm"
             onClick={onLogout}
             aria-label="Выйти и сменить роль"
-            className="min-h-[40px] rounded-xl border-border/80 bg-card font-bold shadow-sm"
+            className="min-h-[40px] rounded-md bg-card font-bold shadow-none"
           >
             <LogOut className="h-4 w-4" aria-hidden />
             <span className="hidden sm:inline">Выйти</span>

@@ -1,6 +1,3 @@
-// Мок-данные школы: 7 параллелей (5–11 классы) × 5 букв (А–Д) = 35 классов.
-// Генерация детерминированная (по seed), чтобы данные были стабильны между рендерами.
-
 export interface Student {
   id: number;
   name: string;
@@ -8,7 +5,6 @@ export interface Student {
 }
 
 export interface ClassInfo {
-  /** Ключ класса, например "7Б" */
   key: string;
   grade: number;
   letter: string;
@@ -21,7 +17,6 @@ export interface MealState {
 }
 
 export interface ClassOrder {
-  /** studentId -> отметки */
   meals: Record<number, MealState>;
   sent: boolean;
   sentAt?: string;
@@ -29,8 +24,6 @@ export interface ClassOrder {
 
 export const GRADES = [5, 6, 7, 8, 9, 10, 11] as const;
 export const LETTERS = ["А", "Б", "В", "Г", "Д"] as const;
-
-/* ---------- Детерминированный PRNG ---------- */
 
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -51,8 +44,6 @@ function shuffle<T>(arr: T[], rand: () => number): T[] {
   }
   return copy;
 }
-
-/* ---------- Пулы имён ---------- */
 
 const BOY_NAMES = [
   "Александр", "Максим", "Иван", "Артём", "Дмитрий", "Никита", "Кирилл",
@@ -94,15 +85,13 @@ const PERSON_POOL: Person[] = (() => {
   return pool;
 })();
 
-/* ---------- Генерация классов ---------- */
-
 function classSeed(grade: number, letterIndex: number): number {
   return grade * 7919 + letterIndex * 104729 + 17;
 }
 
 function generateStudents(grade: number, letterIndex: number): Student[] {
   const rand = mulberry32(classSeed(grade, letterIndex));
-  const count = 14 + Math.floor(rand() * 9); // 14–22 ученика
+  const count = 14 + Math.floor(rand() * 9);
   const pool = shuffle(PERSON_POOL, rand).slice(0, count);
   return pool.map((p, i) => ({
     id: i + 1,
@@ -111,7 +100,6 @@ function generateStudents(grade: number, letterIndex: number): Student[] {
   }));
 }
 
-/** Все 55 классов школы, отсортированные по параллели */
 export const ALL_CLASSES: ClassInfo[] = GRADES.flatMap((grade) =>
   LETTERS.map((letter, letterIndex) => ({
     key: `${grade}${letter}`,
@@ -124,22 +112,6 @@ export const ALL_CLASSES: ClassInfo[] = GRADES.flatMap((grade) =>
 export function getClass(key: string): ClassInfo {
   return ALL_CLASSES.find((c) => c.key === key) ?? ALL_CLASSES[0];
 }
-
-/** Цвет аватара по id ученика — тёплая палитра */
-export const AVATAR_COLORS = [
-  "bg-chart-1/15 text-chart-1",
-  "bg-chart-2/20 text-chart-2",
-  "bg-chart-3/15 text-chart-3",
-  "bg-chart-5/20 text-chart-5",
-  "bg-lunch/15 text-lunch",
-];
-
-export function initials(fullName: string): string {
-  const [surname, name] = fullName.split(" ");
-  return `${surname[0] ?? ""}${name?.[0] ?? ""}`;
-}
-
-/* ---------- Демо-состояние: часть классов уже отправила заказ ---------- */
 
 export function initialOrders(): Record<string, ClassOrder> {
   const orders: Record<string, ClassOrder> = {};

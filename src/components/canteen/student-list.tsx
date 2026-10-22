@@ -2,16 +2,15 @@
 
 import {
   Check,
-  Clock,
   Croissant,
   PencilLine,
   Send,
   Soup,
-  Users,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AVATAR_COLORS, countMeals, initials, type ClassInfo, type ClassOrder } from "@/lib/school-data";
+import { countMeals, type ClassInfo, type ClassOrder } from "@/lib/school-data";
+import { cn } from "@/lib/utils";
 
 interface StudentListProps {
   cls: ClassInfo;
@@ -27,19 +26,13 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
 
   return (
     <section aria-label={`Отметки класса ${cls.key}`} className="space-y-4">
-      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-        {/* Заголовок списка */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-secondary/50 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
-              <Users className="h-5 w-5" aria-hidden />
-            </div>
-            <div className="leading-tight">
-              <h2 className="text-base font-extrabold sm:text-lg">Класс {cls.key}</h2>
-              <p className="text-xs font-semibold text-muted-foreground">
-                {cls.students.length} учеников · можно отметить завтрак, обед или оба сразу
-              </p>
-            </div>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-6">
+          <div className="leading-tight">
+            <h2 className="text-base font-extrabold sm:text-lg">Класс {cls.key}</h2>
+            <p className="mt-0.5 text-xs font-medium text-muted-foreground sm:text-sm">
+              {cls.students.length} учеников, можно отметить завтрак, обед или оба сразу.
+            </p>
           </div>
 
           {!order.sent && (
@@ -48,7 +41,7 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
                 variant="outline"
                 size="sm"
                 onClick={() => onSetAll("breakfast")}
-                className="min-h-[36px] rounded-lg border-breakfast/50 bg-breakfast/10 text-[13px] font-bold text-breakfast-foreground hover:bg-breakfast/20"
+                className="min-h-[36px] rounded-md border-breakfast/40 bg-breakfast/8 text-[13px] font-bold text-breakfast hover:bg-breakfast/15"
               >
                 <Croissant className="h-3.5 w-3.5" aria-hidden />
                 Всем завтрак
@@ -57,7 +50,7 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
                 variant="outline"
                 size="sm"
                 onClick={() => onSetAll("lunch")}
-                className="min-h-[36px] rounded-lg border-lunch/40 bg-lunch/10 text-[13px] font-bold text-lunch hover:bg-lunch/20"
+                className="min-h-[36px] rounded-md border-lunch/40 bg-lunch/8 text-[13px] font-bold text-lunch hover:bg-lunch/15"
               >
                 <Soup className="h-3.5 w-3.5" aria-hidden />
                 Всем обед
@@ -66,7 +59,7 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
                 variant="ghost"
                 size="sm"
                 onClick={() => onSetAll("none")}
-                className="min-h-[36px] rounded-lg text-[13px] font-bold text-muted-foreground hover:text-foreground"
+                className="min-h-[36px] rounded-md text-[13px] font-bold text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" aria-hidden />
                 Снять всё
@@ -75,27 +68,22 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
           )}
         </div>
 
-        {/* Список учеников */}
-        <ul className="nice-scroll max-h-[26rem] divide-y divide-border/60 overflow-y-auto">
-          {cls.students.map((student) => {
+        <ul className="nice-scroll max-h-[26rem] divide-y divide-border overflow-y-auto">
+          {cls.students.map((student, index) => {
             const meal = order.meals[student.id] ?? { breakfast: false, lunch: false };
-            const avatarColor = AVATAR_COLORS[student.id % AVATAR_COLORS.length];
             return (
               <li
                 key={student.id}
-                className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-secondary/40 sm:px-6"
+                className="flex items-center gap-2 px-4 py-2.5 transition-colors hover:bg-secondary/50 sm:gap-3 sm:px-6"
               >
-                <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${avatarColor}`}
-                  aria-hidden
-                >
-                  {initials(student.name)}
+                <span className="w-6 shrink-0 text-right text-xs font-semibold tabular-nums text-muted-foreground" aria-hidden>
+                  {index + 1}
                 </span>
 
                 <span className="min-w-0 flex-1 truncate text-sm font-bold sm:text-[15px]">
                   {student.name}
                   {student.isMonitor && (
-                    <span className="ml-2 inline-flex translate-y-[-1px] items-center rounded-full bg-accent px-2 py-0.5 align-middle text-[10px] font-extrabold uppercase tracking-wide text-accent-foreground">
+                    <span className="ml-2 inline-block -rotate-2 align-middle font-hand text-base font-bold leading-none text-lunch">
                       староста
                     </span>
                   )}
@@ -124,26 +112,19 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
           })}
         </ul>
 
-        {/* Панель отправки */}
-        <div className="border-t border-border/70 bg-secondary/50 px-4 py-4 sm:px-6">
+        <div className="border-t border-border px-4 py-4 sm:px-6">
           {order.sent ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 text-sm font-bold text-success">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success/15">
-                  <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="stamp-in inline-flex items-center gap-3 rounded-md border-2 border-lunch px-4 py-2 text-lunch">
+                <span className="text-sm font-black uppercase tracking-wider">
+                  Отправлено в столовую
                 </span>
-                <span>
-                  Заказ отправлен в столовую
-                  <span className="ml-1.5 inline-flex items-center gap-1 text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" aria-hidden />
-                    в {order.sentAt}
-                  </span>
-                </span>
+                <span className="text-xs font-bold opacity-75">{order.sentAt}</span>
               </div>
               <Button
                 variant="outline"
                 onClick={onEdit}
-                className="min-h-[44px] rounded-xl border-success/40 text-sm font-extrabold text-success hover:bg-success/10"
+                className="min-h-[44px] rounded-md border-lunch/40 text-sm font-extrabold text-lunch hover:bg-lunch/10"
               >
                 <PencilLine className="h-4 w-4" aria-hidden />
                 Изменить заказ
@@ -152,11 +133,11 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-breakfast/15 px-3 py-1.5 text-sm font-extrabold text-breakfast-foreground">
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-breakfast/30 bg-breakfast/8 px-3 py-1.5 text-sm font-extrabold text-breakfast">
                   <Croissant className="h-4 w-4" aria-hidden />
                   Завтраков: {breakfast}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-lunch/15 px-3 py-1.5 text-sm font-extrabold text-lunch">
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-lunch/30 bg-lunch/8 px-3 py-1.5 text-sm font-extrabold text-lunch">
                   <Soup className="h-4 w-4" aria-hidden />
                   Обедов: {lunch}
                 </span>
@@ -165,7 +146,7 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
                 size="lg"
                 onClick={onSend}
                 disabled={breakfast === 0 && lunch === 0}
-                className="min-h-[48px] rounded-xl bg-success px-6 text-base font-extrabold text-success-foreground shadow-md shadow-success/30 hover:bg-success/90"
+                className="min-h-[48px] rounded-md px-6 text-base font-extrabold"
               >
                 <Send className="h-5 w-5" aria-hidden />
                 Отправить в столовую
@@ -195,8 +176,8 @@ function MealToggle({
 }) {
   const activeCls =
     color === "breakfast"
-      ? "border-breakfast bg-breakfast text-breakfast-foreground shadow-sm shadow-breakfast/40"
-      : "border-lunch bg-lunch text-lunch-foreground shadow-sm shadow-lunch/40";
+      ? "border-breakfast bg-breakfast text-breakfast-foreground"
+      : "border-lunch bg-lunch text-lunch-foreground";
 
   return (
     <button
@@ -205,13 +186,15 @@ function MealToggle({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border px-2.5 text-[13px] font-bold transition-all sm:px-3 ${
+      className={cn(
+        "inline-flex min-h-[38px] items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-bold transition-colors sm:px-3",
         active
           ? activeCls
-          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-      } ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+        disabled && "cursor-not-allowed opacity-55",
+      )}
     >
-      {icon}
+      {active ? <Check className="h-4 w-4" aria-hidden /> : icon}
       <span className="hidden xs:inline sm:inline">{label}</span>
     </button>
   );

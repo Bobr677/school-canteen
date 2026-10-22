@@ -63,7 +63,7 @@ export default function Home() {
     });
     if (meal !== "none") {
       toast({
-        title: meal === "breakfast" ? "🥐 Завтрак отмечен всем" : "🍲 Обед отмечен всем",
+        title: meal === "breakfast" ? "Завтрак отмечен всем" : "Обед отмечен всем",
         description: `Класс ${cls.key}: каждый ученик получит ${meal === "breakfast" ? "завтрак" : "обед"}.`,
       });
     }
@@ -74,8 +74,8 @@ export default function Home() {
     const time = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
     patchOrder(selectedClass, (prev) => ({ ...prev, sent: true, sentAt: time }));
     toast({
-      title: `Заказ ${cls.key} отправлен в столовую 🎉`,
-      description: `Завтраков: ${breakfast} · обедов: ${lunch}. Повара уже видят заявку.`,
+      title: `Заказ ${cls.key} отправлен в столовую`,
+      description: `Завтраков: ${breakfast}, обедов: ${lunch}. Повара уже видят заявку.`,
     });
   }
 
@@ -92,7 +92,7 @@ export default function Home() {
     setRole("monitor");
     setScreen("monitor");
     toast({
-      title: `Вы вошли как староста ${classKey} ✅`,
+      title: `Вы вошли как староста ${classKey}`,
       description: "Отметьте завтраки и обеды и отправьте заказ в столовую.",
     });
   }
@@ -121,10 +121,10 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-accent/30">
+    <div className="flex min-h-screen flex-col">
       <Header role={role} classKey={screen === "monitor" ? selectedClass : undefined} onLogout={logout} />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         {screen === "setup" && (
           <StarostaSetup sentKeys={sentKeys} onBack={() => setScreen("welcome")} onComplete={handleLogin} />
         )}
@@ -133,10 +133,11 @@ export default function Home() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                Добрый день, староста {cls.key} класса! 👋
+                Добрый день, староста {cls.key} класса!
               </h2>
-              <p className="mt-1 max-w-2xl text-sm font-semibold text-muted-foreground sm:text-base">
-                Отметьте, кто идёт на завтрак и обед, и отправьте заказ в столовую одним нажатием.
+              <p className="mt-1 max-w-2xl text-sm font-medium text-muted-foreground sm:text-base">
+                Отметьте, кто идёт на завтрак и обед, и отправьте заказ в столовую
+                одним нажатием.
               </p>
             </div>
 
@@ -155,10 +156,10 @@ export default function Home() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                Экран столовой 👩‍🍳
+                Экран столовой
               </h2>
-              <p className="mt-1 max-w-2xl text-sm font-semibold text-muted-foreground sm:text-base">
-                Сводка заказов по всей школе: сколько завтраков и обедов готовить на сегодня.
+              <p className="mt-1 max-w-2xl text-sm font-medium text-muted-foreground sm:text-base">
+                Сколько готовить на сегодня: сводка заказов по всем классам школы.
               </p>
             </div>
             <KitchenDashboard orders={orders} />
@@ -166,10 +167,10 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="mt-auto border-t border-border/70 bg-card/60">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs font-semibold text-muted-foreground sm:px-6">
-          <p>ОбедКласс — макет визуального дизайна. Данные демонстрационные.</p>
-          <p>35 классов (5–11) · завтрак и обед · кнопка «Отправить в столовую»</p>
+      <footer className="mt-auto border-t border-border bg-card/70">
+        <div className="mx-auto w-full max-w-5xl px-4 py-4 text-xs font-medium text-muted-foreground sm:px-6">
+          ОбедКласс — макет визуального дизайна. Данные демонстрационные: классы
+          с 5 по 11, буквы от А до Д.
         </div>
       </footer>
     </div>

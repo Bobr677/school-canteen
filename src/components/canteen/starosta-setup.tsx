@@ -2,16 +2,7 @@
 
 import * as React from "react";
 import { useState } from "react";
-import {
-  ArrowLeft,
-  Check,
-  Eye,
-  EyeOff,
-  Info,
-  KeyRound,
-  ShieldCheck,
-  UserCheck,
-} from "lucide-react";
+import { ArrowLeft, Check, Eye, EyeOff, KeyRound, UserCheck } from "lucide-react";
 import { OTPInputContext, REGEXP_ONLY_DIGITS } from "input-otp";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup } from "@/components/ui/input-otp";
@@ -49,15 +40,15 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
             <UserCheck className="h-6 w-6 text-primary" aria-hidden />
             Вход для старосты
           </h2>
-          <p className="mt-1 max-w-2xl text-sm font-semibold text-muted-foreground sm:text-base">
-            Выберите свой класс и придумайте код-пароль — в макете код никуда не сохраняется,
-            это просто дизайн.
+          <p className="mt-1 max-w-2xl text-sm font-medium text-muted-foreground sm:text-base">
+            Выберите свой класс и придумайте код-пароль — в макете код никуда не
+            сохраняется, это просто дизайн.
           </p>
         </div>
         <Button
           variant="ghost"
           onClick={onBack}
-          className="min-h-[44px] rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground"
+          className="min-h-[44px] rounded-md text-sm font-bold text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Назад
@@ -66,30 +57,28 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
 
       <ClassPicker selected={classKey || "5А"} sentKeys={sentKeys} onSelect={setClassKey} />
 
-      {/* Код-пароль */}
       <section
         aria-label="Придумайте код-пароль"
-        className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm sm:p-6"
+        className="rounded-lg border border-border bg-card p-4 sm:p-6"
       >
         <h3 className="flex items-center gap-2 text-base font-extrabold sm:text-lg">
           <KeyRound className="h-5 w-5 text-primary" aria-hidden />
           Придумайте код-пароль класса
         </h3>
-        <p className="mt-1 text-xs font-semibold text-muted-foreground sm:text-sm">
+        <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
           6 цифр, как PIN-код на телефоне. Код нужен, чтобы заказ мог менять только староста.
         </p>
 
         <div className="mt-4 grid gap-5 sm:grid-cols-2">
-          {/* Придумайте код */}
           <div className="space-y-2">
             <div className="flex min-h-[32px] items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+              <span className="text-xs font-extrabold text-muted-foreground">
                 Код-пароль
               </span>
               <button
                 type="button"
                 onClick={() => setShowPin((v) => !v)}
-                className="inline-flex min-h-[32px] items-center gap-1 rounded-lg px-2 text-xs font-bold text-muted-foreground hover:text-foreground"
+                className="inline-flex min-h-[32px] items-center gap-1 rounded-md px-2 text-xs font-bold text-muted-foreground hover:text-foreground"
               >
                 {showPin ? <EyeOff className="h-3.5 w-3.5" aria-hidden /> : <Eye className="h-3.5 w-3.5" aria-hidden />}
                 {showPin ? "Скрыть" : "Показать"}
@@ -113,10 +102,9 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
             )}
           </div>
 
-          {/* Повторите код */}
           <div className="space-y-2">
             <div className="flex min-h-[32px] items-center">
-              <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+              <span className="text-xs font-extrabold text-muted-foreground">
                 Повторите код
               </span>
             </div>
@@ -136,7 +124,7 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
               <p className="text-xs font-bold text-destructive">Коды не совпадают</p>
             ) : (
               matched && (
-                <p className="flex items-center gap-1 text-xs font-bold text-success">
+                <p className="flex items-center gap-1 text-xs font-bold text-primary">
                   <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
                   Коды совпадают
                 </p>
@@ -145,12 +133,11 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-5">
-          <p className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-            <ShieldCheck className="h-4 w-4 text-success" aria-hidden />
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+          <p className="text-xs font-bold text-muted-foreground">
             {cls ? (
               <>
-                Вход как староста <span className="text-foreground">{cls.key}</span> ·{" "}
+                Вход как староста <span className="text-foreground">{cls.key}</span>, в классе{" "}
                 {cls.students.length} учеников
               </>
             ) : (
@@ -161,7 +148,7 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
             size="lg"
             onClick={submit}
             disabled={!canEnter}
-            className="min-h-[48px] rounded-xl px-6 text-base font-extrabold shadow-md shadow-primary/30"
+            className="min-h-[48px] rounded-md px-6 text-base font-extrabold"
           >
             <UserCheck className="h-5 w-5" aria-hidden />
             Войти как староста{cls ? ` ${cls.key}` : ""}
@@ -169,16 +156,14 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
         </div>
       </section>
 
-      <p className="flex items-start gap-1.5 px-1 text-xs font-semibold text-muted-foreground">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-        Это макет: код не отправляется на сервер и не сохраняется. В будущем здесь будет
-        настоящая регистрация старосты.
+      <p className="px-1 text-xs font-medium text-muted-foreground">
+        Это макет: код не отправляется на сервер и не сохраняется. В будущем здесь
+        будет настоящая регистрация старосты.
       </p>
     </div>
   );
 }
 
-/** Слот PIN-кода: отдельный квадратик, опционально скрывает цифру точкой */
 function PinSlot({
   index,
   masked,
@@ -197,7 +182,7 @@ function PinSlot({
       data-active={isActive}
       data-invalid={invalid}
       className={cn(
-        "data-[active=true]:border-ring data-[active=true]:ring-ring/50 relative flex h-12 w-10 items-center justify-center rounded-xl border bg-card text-lg font-extrabold shadow-xs transition-all outline-none sm:h-14 sm:w-12 data-[active=true]:z-10 data-[active=true]:ring-[3px]",
+        "data-[active=true]:border-ring data-[active=true]:ring-ring/40 relative flex h-12 w-10 items-center justify-center rounded-md border bg-card text-lg font-extrabold transition-all outline-none sm:h-14 sm:w-12 data-[active=true]:z-10 data-[active=true]:ring-[3px]",
         "data-[invalid=true]:border-destructive data-[invalid=true]:text-destructive",
         "data-[active=true]:data-[invalid=true]:ring-destructive/20",
       )}

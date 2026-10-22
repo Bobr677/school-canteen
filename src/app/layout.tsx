@@ -1,11 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito } from "next/font/google";
+import { Caveat, Golos_Text } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
+const golos = Golos_Text({
+  variable: "--font-golos",
+  subsets: ["latin", "cyrillic"],
+});
+
+const caveat = Caveat({
+  variable: "--font-caveat",
   subsets: ["latin", "cyrillic"],
 });
 
@@ -16,12 +21,12 @@ export const metadata: Metadata = {
   keywords: ["школьная столовая", "школьное питание", "заказ еды", "завтрак", "обед"],
   authors: [{ name: "Bobr677" }],
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23e8722a%22/><text y=%22.72em%22 x=%2250%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22>О</text></svg>",
+    icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22%2324429b%22/><text y=%22.74em%22 x=%2250%22 font-size=%2262%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22>О</text></svg>",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#e8722a",
+  themeColor: "#24429b",
 };
 
 export default function RootLayout({
@@ -31,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <body className={`${nunito.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className={`${golos.variable} ${caveat.variable} font-sans antialiased bg-background text-foreground`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
           <Toaster />
