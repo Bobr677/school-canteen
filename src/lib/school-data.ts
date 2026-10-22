@@ -25,6 +25,31 @@ export interface ClassOrder {
 export const GRADES = [5, 6, 7, 8, 9, 10, 11] as const;
 export const LETTERS = ["А", "Б", "В", "Г", "Д"] as const;
 
+const CLASS_KEYS = new Set<string>(
+  GRADES.flatMap((grade) => LETTERS.map((letter) => `${grade}${letter}`)),
+);
+
+export function isValidClassKey(key: string): boolean {
+  return CLASS_KEYS.has(key);
+}
+
+export function todayKey(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+export function formatMoscowTime(date: Date): string {
+  return new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "Europe/Moscow",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 function mulberry32(seed: number) {
   let a = seed >>> 0;
   return function () {
@@ -111,31 +136,6 @@ export const ALL_CLASSES: ClassInfo[] = GRADES.flatMap((grade) =>
 
 export function getClass(key: string): ClassInfo {
   return ALL_CLASSES.find((c) => c.key === key) ?? ALL_CLASSES[0];
-}
-
-export function initialOrders(): Record<string, ClassOrder> {
-  const orders: Record<string, ClassOrder> = {};
-  for (const cls of ALL_CLASSES) {
-    const rand = mulberry32(classSeed(cls.grade, LETTERS.indexOf(cls.letter as (typeof LETTERS)[number])) + 999);
-    const sent = rand() < 0.42;
-    const meals: Record<number, MealState> = {};
-    if (sent) {
-      for (const s of cls.students) {
-        meals[s.id] = {
-          breakfast: rand() < 0.55,
-          lunch: rand() < 0.75,
-        };
-      }
-    }
-    orders[cls.key] = {
-      meals,
-      sent,
-      sentAt: sent
-        ? `0${7 + Math.floor(rand() * 2)}:${String(Math.floor(rand() * 60)).padStart(2, "0")}`
-        : undefined,
-    };
-  }
-  return orders;
 }
 
 export function countMeals(order: ClassOrder): { breakfast: number; lunch: number } {

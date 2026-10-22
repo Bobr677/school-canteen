@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  AlertCircle,
   Check,
   Croissant,
+  Loader2,
   PencilLine,
   Send,
   Soup,
@@ -12,16 +14,19 @@ import { Button } from "@/components/ui/button";
 import { countMeals, type ClassInfo, type ClassOrder } from "@/lib/school-data";
 import { cn } from "@/lib/utils";
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
 interface StudentListProps {
   cls: ClassInfo;
   order: ClassOrder;
+  saveState: SaveState;
   onToggle: (studentId: number, meal: "breakfast" | "lunch") => void;
   onSetAll: (meal: "breakfast" | "lunch" | "none") => void;
   onSend: () => void;
   onEdit: () => void;
 }
 
-export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: StudentListProps) {
+export function StudentList({ cls, order, saveState, onToggle, onSetAll, onSend, onEdit }: StudentListProps) {
   const { breakfast, lunch } = countMeals(order);
 
   return (
@@ -141,6 +146,7 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
                   <Soup className="h-4 w-4" aria-hidden />
                   Обедов: {lunch}
                 </span>
+                <SaveIndicator state={saveState} />
               </div>
               <Button
                 size="lg"
@@ -156,6 +162,32 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
         </div>
       </div>
     </section>
+  );
+}
+
+function SaveIndicator({ state }: { state: SaveState }) {
+  if (state === "idle") return null;
+  if (state === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+        Сохраняем…
+      </span>
+    );
+  }
+  if (state === "saved") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
+        <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+        Сохранено
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-bold text-destructive">
+      <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+      Не сохранилось
+    </span>
   );
 }
 

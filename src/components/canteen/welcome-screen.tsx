@@ -70,7 +70,7 @@ export function WelcomeScreen({ onPick }: WelcomeScreenProps) {
           сделал Авдалян Макар, ученик 6 «В» класса
         </p>
         <p className="text-xs font-medium text-muted-foreground">
-          ОбедКласс — макет визуального дизайна, данные демонстрационные.
+          Заказы и коды классов хранятся на сервере — данные настоящие.
         </p>
       </footer>
     </div>

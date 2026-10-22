@@ -29,7 +29,7 @@ export function Header({ role, classKey, onLogout }: HeaderProps) {
                 ОбедКласс
               </h1>
               <span className="hidden shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground sm:inline">
-                макет
+                бета
               </span>
             </div>
             <p className="hidden font-hand text-base font-bold leading-none text-muted-foreground sm:block">
