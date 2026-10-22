@@ -65,8 +65,13 @@ export function WelcomeScreen({ onPick }: WelcomeScreenProps) {
         </p>
       </main>
 
-      <footer className="pb-6 text-center text-xs font-medium text-muted-foreground">
-        ОбедКласс — макет визуального дизайна, данные демонстрационные.
+      <footer className="flex flex-col items-center gap-1.5 pb-7 text-center">
+        <p className="font-hand text-xl font-bold text-foreground/75 sm:text-2xl">
+          сделал Авдалян Макар, ученик 6 «В» класса
+        </p>
+        <p className="text-xs font-medium text-muted-foreground">
+          ОбедКласс — макет визуального дизайна, данные демонстрационные.
+        </p>
       </footer>
     </div>
   );
