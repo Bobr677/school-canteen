@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -11,8 +12,10 @@ import {
   ShieldCheck,
   UserCheck,
 } from "lucide-react";
+import { OTPInputContext, REGEXP_ONLY_DIGITS } from "input-otp";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup } from "@/components/ui/input-otp";
+import { cn } from "@/lib/utils";
 import { ClassPicker } from "./class-picker";
 import { getClass } from "@/lib/school-data";
 
@@ -24,18 +27,18 @@ interface StarostaSetupProps {
 
 export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupProps) {
   const [classKey, setClassKey] = useState("");
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [showPass2, setShowPass2] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pin2, setPin2] = useState("");
+  const [showPin, setShowPin] = useState(false);
 
-  const tooShort = password.length > 0 && password.length < 4;
-  const mismatch = password2.length > 0 && password !== password2;
-  const canEnter = classKey !== "" && password.length >= 4 && password === password2;
+  const tooShort = pin.length > 0 && pin.length < 6;
+  const mismatch = pin2.length === 6 && pin !== pin2;
+  const matched = pin.length === 6 && pin2.length === 6 && pin === pin2;
+  const canEnter = classKey !== "" && matched;
   const cls = classKey ? getClass(classKey) : null;
 
   function submit() {
-    if (classKey && canEnter) onComplete(classKey);
+    if (canEnter) onComplete(classKey);
   }
 
   return (
@@ -47,7 +50,7 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
             Вход для старосты
           </h2>
           <p className="mt-1 max-w-2xl text-sm font-semibold text-muted-foreground sm:text-base">
-            Выберите свой класс и придумайте пароль — в макете пароль никуда не сохраняется,
+            Выберите свой класс и придумайте код-пароль — в макете код никуда не сохраняется,
             это просто дизайн.
           </p>
         </div>
@@ -63,86 +66,77 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
 
       <ClassPicker selected={classKey || "5А"} sentKeys={sentKeys} onSelect={setClassKey} />
 
-      {/* Пароль */}
+      {/* Код-пароль */}
       <section
-        aria-label="Придумайте пароль"
+        aria-label="Придумайте код-пароль"
         className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm sm:p-6"
       >
         <h3 className="flex items-center gap-2 text-base font-extrabold sm:text-lg">
           <KeyRound className="h-5 w-5 text-primary" aria-hidden />
-          Придумайте пароль класса
+          Придумайте код-пароль класса
         </h3>
         <p className="mt-1 text-xs font-semibold text-muted-foreground sm:text-sm">
-          Пароль нужен, чтобы заказ мог менять только староста. Минимум 4 символа.
+          6 цифр, как PIN-код на телефоне. Код нужен, чтобы заказ мог менять только староста.
         </p>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label
-              htmlFor="new-password"
-              className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground"
-            >
-              Пароль
-            </label>
-            <div className="relative">
-              <Input
-                id="new-password"
-                type={showPass ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Например: obed2026"
-                autoComplete="new-password"
-                className="min-h-[48px] rounded-xl pr-11 text-base font-bold"
-                aria-invalid={tooShort}
-              />
+        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+          {/* Придумайте код */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+                Код-пароль
+              </span>
               <button
                 type="button"
-                onClick={() => setShowPass((v) => !v)}
-                aria-label={showPass ? "Скрыть пароль" : "Показать пароль"}
-                className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground"
+                onClick={() => setShowPin((v) => !v)}
+                className="inline-flex min-h-[32px] items-center gap-1 rounded-lg px-2 text-xs font-bold text-muted-foreground hover:text-foreground"
               >
-                {showPass ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+                {showPin ? <EyeOff className="h-3.5 w-3.5" aria-hidden /> : <Eye className="h-3.5 w-3.5" aria-hidden />}
+                {showPin ? "Скрыть" : "Показать"}
               </button>
             </div>
+            <InputOTP
+              maxLength={6}
+              pattern={REGEXP_ONLY_DIGITS}
+              value={pin}
+              onChange={setPin}
+              autoFocus
+            >
+              <InputOTPGroup className="gap-1.5">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <PinSlot key={i} index={i} masked={!showPin} invalid={tooShort || mismatch} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
             {tooShort && (
-              <p className="text-xs font-bold text-destructive">Слишком короткий — минимум 4 символа</p>
+              <p className="text-xs font-bold text-destructive">Введите все 6 цифр</p>
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <label
-              htmlFor="confirm-password"
-              className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground"
+          {/* Повторите код */}
+          <div className="space-y-2">
+            <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+              Повторите код
+            </span>
+            <InputOTP
+              maxLength={6}
+              pattern={REGEXP_ONLY_DIGITS}
+              value={pin2}
+              onChange={setPin2}
             >
-              Повторите пароль
-            </label>
-            <div className="relative">
-              <Input
-                id="confirm-password"
-                type={showPass2 ? "text" : "password"}
-                value={password2}
-                onChange={(e) => setPassword2(e.target.value)}
-                placeholder="Ещё раз"
-                autoComplete="new-password"
-                className="min-h-[48px] rounded-xl pr-11 text-base font-bold"
-                aria-invalid={mismatch}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass2((v) => !v)}
-                aria-label={showPass2 ? "Скрыть пароль" : "Показать пароль"}
-                className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground"
-              >
-                {showPass2 ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
-              </button>
-            </div>
+              <InputOTPGroup className="gap-1.5">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <PinSlot key={i} index={i} masked={!showPin} invalid={mismatch} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
             {mismatch ? (
-              <p className="text-xs font-bold text-destructive">Пароли не совпадают</p>
+              <p className="text-xs font-bold text-destructive">Коды не совпадают</p>
             ) : (
-              password.length >= 4 && password === password2 && (
+              matched && (
                 <p className="flex items-center gap-1 text-xs font-bold text-success">
                   <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
-                  Пароли совпадают
+                  Коды совпадают
                 </p>
               )
             )}
@@ -175,9 +169,43 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
 
       <p className="flex items-start gap-1.5 px-1 text-xs font-semibold text-muted-foreground">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-        Это макет: пароль не отправляется на сервер и не сохраняется. В будущем здесь будет
+        Это макет: код не отправляется на сервер и не сохраняется. В будущем здесь будет
         настоящая регистрация старосты.
       </p>
+    </div>
+  );
+}
+
+/** Слот PIN-кода: отдельный квадратик, опционально скрывает цифру точкой */
+function PinSlot({
+  index,
+  masked,
+  invalid,
+}: {
+  index: number;
+  masked: boolean;
+  invalid: boolean;
+}) {
+  const ctx = React.useContext(OTPInputContext);
+  const { char, hasFakeCaret, isActive } = ctx?.slots[index] ?? {};
+
+  return (
+    <div
+      data-slot="pin-slot"
+      data-active={isActive}
+      data-invalid={invalid}
+      className={cn(
+        "data-[active=true]:border-ring data-[active=true]:ring-ring/50 relative flex h-12 w-10 items-center justify-center rounded-xl border bg-card text-lg font-extrabold shadow-xs transition-all outline-none sm:h-14 sm:w-12 data-[active=true]:z-10 data-[active=true]:ring-[3px]",
+        "data-[invalid=true]:border-destructive data-[invalid=true]:text-destructive",
+        "data-[active=true]:data-[invalid=true]:ring-destructive/20",
+      )}
+    >
+      {masked && char ? "\u2022" : char}
+      {hasFakeCaret && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="animate-caret-blink bg-foreground h-4 w-px duration-1000" />
+        </div>
+      )}
     </div>
   );
 }

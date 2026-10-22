@@ -48,7 +48,7 @@ export function WelcomeScreen({ onPick }: WelcomeScreenProps) {
         </div>
 
         <p className="mt-6 text-xs font-bold text-muted-foreground">
-          Староста при первом входе придумывает пароль класса — чтобы заказ мог менять только он
+          Староста при первом входе придумывает код-пароль из 6 цифр — чтобы заказ мог менять только он
         </p>
       </main>
 
