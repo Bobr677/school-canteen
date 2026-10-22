@@ -41,7 +41,7 @@ export default function Home() {
       sent: false,
       meals: {
         ...prev.meals,
-        [studentId]: { ...prev.meals[studentId], breakfast: false, lunch: false, [meal]: !prev.meals[studentId]?.[meal] },
+        [studentId]: { ...prev.meals[studentId], [meal]: !prev.meals[studentId]?.[meal] },
       },
     }));
   }
@@ -50,10 +50,14 @@ export default function Home() {
     patchOrder(selectedClass, (prev) => {
       const meals: Record<number, MealState> = {};
       for (const s of cls.students) {
-        meals[s.id] = {
-          breakfast: meal === "breakfast",
-          lunch: meal === "lunch",
-        };
+        const cur = prev.meals[s.id] ?? { breakfast: false, lunch: false };
+        meals[s.id] =
+          meal === "none"
+            ? { breakfast: false, lunch: false }
+            : {
+                breakfast: meal === "breakfast" ? true : cur.breakfast,
+                lunch: meal === "lunch" ? true : cur.lunch,
+              };
       }
       return { ...prev, sent: false, meals };
     });

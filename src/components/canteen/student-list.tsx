@@ -37,7 +37,7 @@ export function StudentList({ cls, order, onToggle, onSetAll, onSend, onEdit }: 
             <div className="leading-tight">
               <h2 className="text-base font-extrabold sm:text-lg">Класс {cls.key}</h2>
               <p className="text-xs font-semibold text-muted-foreground">
-                {cls.students.length} учеников · отметки на сегодня
+                {cls.students.length} учеников · можно отметить завтрак, обед или оба сразу
               </p>
             </div>
           </div>
