@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Header, type Role } from "@/components/canteen/header";
-import { ClassPicker } from "@/components/canteen/class-picker";
+import { WelcomeScreen } from "@/components/canteen/welcome-screen";
+import { StarostaSetup } from "@/components/canteen/starosta-setup";
 import { StudentList } from "@/components/canteen/student-list";
 import { KitchenDashboard } from "@/components/canteen/kitchen-dashboard";
 import {
@@ -14,9 +15,12 @@ import {
   type MealState,
 } from "@/lib/school-data";
 
+type Screen = "welcome" | "setup" | "monitor" | "kitchen";
+
 export default function Home() {
+  const [screen, setScreen] = useState<Screen>("welcome");
   const [role, setRole] = useState<Role>("monitor");
-  const [selectedClass, setSelectedClass] = useState("7Б");
+  const [selectedClass, setSelectedClass] = useState("5А");
   const [orders, setOrders] = useState<Record<string, ClassOrder>>(() => initialOrders());
 
   const cls = useMemo(() => getClass(selectedClass), [selectedClass]);
@@ -79,24 +83,58 @@ export default function Home() {
     });
   }
 
+  function handleLogin(classKey: string) {
+    setSelectedClass(classKey);
+    setRole("monitor");
+    setScreen("monitor");
+    toast({
+      title: `Вы вошли как староста ${classKey} ✅`,
+      description: "Отметьте завтраки и обеды и отправьте заказ в столовую.",
+    });
+  }
+
+  function logout() {
+    setScreen("welcome");
+    toast({
+      title: "Вы вышли из аккаунта",
+      description: "Выберите роль заново: староста или столовая.",
+    });
+  }
+
+  if (screen === "welcome") {
+    return (
+      <WelcomeScreen
+        onPick={(picked) => {
+          if (picked === "monitor") {
+            setScreen("setup");
+          } else {
+            setRole("kitchen");
+            setScreen("kitchen");
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-accent/30">
-      <Header role={role} onRoleChange={setRole} />
+      <Header role={role} classKey={screen === "monitor" ? selectedClass : undefined} onLogout={logout} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
-        {role === "monitor" ? (
+        {screen === "setup" && (
+          <StarostaSetup sentKeys={sentKeys} onBack={() => setScreen("welcome")} onComplete={handleLogin} />
+        )}
+
+        {screen === "monitor" && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                Добрый день, староста! 👋
+                Добрый день, староста {cls.key} класса! 👋
               </h2>
               <p className="mt-1 max-w-2xl text-sm font-semibold text-muted-foreground sm:text-base">
-                Выберите свой класс, отметьте, кто идёт на завтрак и обед,
-                и отправьте заказ в столовую одним нажатием.
+                Отметьте, кто идёт на завтрак и обед, и отправьте заказ в столовую одним нажатием.
               </p>
             </div>
-
-            <ClassPicker selected={selectedClass} sentKeys={sentKeys} onSelect={setSelectedClass} />
 
             <StudentList
               cls={cls}
@@ -107,7 +145,9 @@ export default function Home() {
               onEdit={editOrder}
             />
           </div>
-        ) : (
+        )}
+
+        {screen === "kitchen" && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
@@ -125,7 +165,7 @@ export default function Home() {
       <footer className="mt-auto border-t border-border/70 bg-card/60">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs font-semibold text-muted-foreground sm:px-6">
           <p>ОбедКласс — макет визуального дизайна. Данные демонстрационные.</p>
-          <p>55 классов · завтрак и обед · кнопка «Отправить в столовую»</p>
+          <p>35 классов (5–11) · завтрак и обед · кнопка «Отправить в столовую»</p>
         </div>
       </footer>
     </div>

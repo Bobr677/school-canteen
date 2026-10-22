@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, LayoutGrid, Users } from "lucide-react";
-import { ALL_CLASSES, getClass } from "@/lib/school-data";
+import { ALL_CLASSES, GRADES, getClass } from "@/lib/school-data";
 
 interface ClassPickerProps {
   selected: string;
@@ -21,7 +21,7 @@ export function ClassPicker({ selected, sentKeys, onSelect }: ClassPickerProps) 
             Классы школы
           </h2>
           <p className="text-xs font-semibold text-muted-foreground sm:text-sm">
-            11 параллелей · буквы А–Д · всего {ALL_CLASSES.length} классов
+            {GRADES.length} параллелей (5–11) · буквы А–Д · всего {ALL_CLASSES.length} классов
           </p>
         </div>
         <p className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
