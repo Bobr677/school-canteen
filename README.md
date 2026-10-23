@@ -67,6 +67,14 @@ bun run dev
 
 Открыть http://localhost:3000
 
+## Деплой 24/7
+
+Полная пошаговая инструкция — в [DEPLOY.md](DEPLOY.md). Коротко: Vercel (бесплатный
+хостинг) + Neon Postgres (бесплатная база через встроенный маркетплейс Vercel).
+Понадобятся три переменные окружения: `DATABASE_URL`, `DIRECT_URL`, `SESSION_SECRET`.
+Для хостинга используется схема `prisma/schema.deploy.prisma` (PostgreSQL), локально —
+`prisma/schema.prisma` (SQLite).
+
 ## Структура
 
 ```

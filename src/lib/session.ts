@@ -4,6 +4,10 @@ const COOKIE_NAME = "obed_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const SECRET = process.env.SESSION_SECRET || "obedklass-local-dev-secret";
 
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  console.warn("SESSION_SECRET не задан — задайте его в настройках хостинга");
+}
+
 interface SessionPayload {
   classId: string;
   exp: number;

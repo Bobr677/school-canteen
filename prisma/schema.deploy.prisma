@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model ClassAuth {
+  id        String   @id @default(cuid())
+  classId   String   @unique
+  pinHash   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DailyOrder {
+  id        String        @id @default(cuid())
+  classId   String
+  date      String
+  sent      Boolean       @default(false)
+  sentAt    DateTime?
+  updatedAt DateTime      @updatedAt
+  marks     StudentMark[]
+
+  @@unique([classId, date])
+}
+
+model StudentMark {
+  id        String     @id @default(cuid())
+  orderId   String
+  name      String
+  breakfast Boolean    @default(false)
+  lunch     Boolean    @default(false)
+  order     DailyOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, name])
+}
