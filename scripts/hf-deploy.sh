@@ -19,7 +19,7 @@ cp "$REPO/scripts/hf-files/Dockerfile" "$STAGE/Dockerfile"
 cp "$REPO/scripts/hf-files/.dockerignore" "$STAGE/.dockerignore"
 cp "$REPO/scripts/hf-files/README.md" "$STAGE/README.md"
 
-if ! curl -sf -X POST https://huggingface.co/api/repos \
+if ! curl -sf -X POST https://huggingface.co/api/repos/create \
      -H "Authorization: Bearer $HF_TOKEN" -H 'Content-Type: application/json' \
      -d '{"type":"space","name":"obedclass","sdk":"docker","private":false}' >/dev/null; then
   echo "space already exists (ok)"
