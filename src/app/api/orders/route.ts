@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { DailyOrder, StudentMark } from "@prisma/client";
 import { db } from "@/lib/db";
-import { formatMoscowTime, getClass, todayKey } from "@/lib/school-data";
+import { formatMoscowTime, todayKey } from "@/lib/school-data";
 import { getSessionClassId } from "@/lib/session";
 
 interface MarkInput {
@@ -55,8 +55,15 @@ export async function PUT(request: Request) {
   }
   const sent = body.sent === true;
 
-  const roster = getClass(classId).students;
-  const allowed = new Set(roster.map((s) => s.name));
+  const rosterRow = await db.classRoster.findUnique({ where: { classId } });
+  if (!rosterRow) {
+    return NextResponse.json(
+      { error: "Состав класса не найден — пусть староста зарегистрирует класс заново" },
+      { status: 400 },
+    );
+  }
+  const roster = JSON.parse(rosterRow.students) as string[];
+  const allowed = new Set(roster);
   const provided = new Map<string, { breakfast: boolean; lunch: boolean }>();
   for (const raw of body.marks) {
     if (!raw || typeof raw !== "object") continue;
@@ -78,11 +85,11 @@ export async function PUT(request: Request) {
 
     await tx.studentMark.deleteMany({ where: { orderId: row.id } });
     await tx.studentMark.createMany({
-      data: roster.map((s) => {
-        const m = provided.get(s.name);
+      data: roster.map((name) => {
+        const m = provided.get(name);
         return {
           orderId: row.id,
-          name: s.name,
+          name,
           breakfast: m?.breakfast ?? false,
           lunch: m?.lunch ?? false,
         };

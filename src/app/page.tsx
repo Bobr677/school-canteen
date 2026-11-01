@@ -11,8 +11,10 @@ import { StudentList } from "@/components/canteen/student-list";
 import { KitchenDashboard } from "@/components/canteen/kitchen-dashboard";
 import {
   countMeals,
-  getClass,
+  getClassInfo,
+  rosterToStudents,
   todayKey,
+  type ClassInfo,
   type ClassOrder,
   type MealState,
 } from "@/lib/school-data";
@@ -33,14 +35,27 @@ interface OrderJson {
   marks: MarkJson[];
 }
 
-function ordersFromServer(rows: OrderJson[]): Record<string, ClassOrder> {
+interface RosterJson {
+  classId: string;
+  students: string[];
+}
+
+function classInfoFor(key: string, rosters: Record<string, string[]>): ClassInfo {
+  return { ...getClassInfo(key), students: rosterToStudents(rosters[key] ?? []) };
+}
+
+function ordersFromServer(
+  rows: OrderJson[],
+  rosters: Record<string, string[]>,
+): Record<string, ClassOrder> {
   const out: Record<string, ClassOrder> = {};
   for (const row of rows) {
-    const cls = getClass(row.classId);
+    const roster = rosters[row.classId] ?? [];
     const meals: Record<number, MealState> = {};
     for (const m of row.marks) {
-      const student = cls.students.find((s) => s.name === m.name);
-      if (student) meals[student.id] = { breakfast: m.breakfast, lunch: m.lunch };
+      const id = roster.indexOf(m.name);
+      if (id === -1) continue;
+      meals[id + 1] = { breakfast: m.breakfast, lunch: m.lunch };
     }
     out[row.classId] = { meals, sent: row.sent, sentAt: row.sentAt };
   }
@@ -51,10 +66,12 @@ export default function Home() {
   const [screen, setScreen] = useState<Screen>("welcome");
   const [role, setRole] = useState<Role>("monitor");
   const [selectedClass, setSelectedClass] = useState("5А");
+  const [rosters, setRosters] = useState<Record<string, string[]>>({});
   const [orders, setOrders] = useState<Record<string, ClassOrder>>({});
   const [booted, setBooted] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rostersRef = useRef<Record<string, string[]>>({});
   const ordersRef = useRef<Record<string, ClassOrder>>({});
 
   const applyOrders = useCallback(
@@ -65,7 +82,10 @@ export default function Home() {
     [],
   );
 
-  const cls = useMemo(() => getClass(selectedClass), [selectedClass]);
+  const cls = useMemo(
+    () => classInfoFor(selectedClass, rosters),
+    [selectedClass, rosters],
+  );
   const order = orders[selectedClass] ?? { meals: {}, sent: false };
 
   const sentKeys = useMemo(
@@ -73,12 +93,27 @@ export default function Home() {
     [orders],
   );
 
+  const loadRosters = useCallback(async (): Promise<Record<string, string[]>> => {
+    try {
+      const res = await fetch("/api/rosters");
+      if (!res.ok) return rostersRef.current;
+      const data = (await res.json()) as { rosters?: RosterJson[] };
+      const next: Record<string, string[]> = {};
+      for (const r of data.rosters ?? []) next[r.classId] = r.students;
+      rostersRef.current = next;
+      setRosters(next);
+      return next;
+    } catch {
+      return rostersRef.current;
+    }
+  }, []);
+
   const loadOrders = useCallback(async () => {
     try {
       const res = await fetch(`/api/orders?date=${todayKey()}`);
       if (!res.ok) return;
       const data = (await res.json()) as { orders?: OrderJson[] };
-      const loaded = ordersFromServer(data.orders ?? []);
+      const loaded = ordersFromServer(data.orders ?? [], rostersRef.current);
       applyOrders((prev) => {
         const next = { ...prev };
         for (const key of Object.keys(loaded)) next[key] = loaded[key];
@@ -93,14 +128,21 @@ export default function Home() {
     let cancelled = false;
     (async () => {
       try {
-        const [sessionRes, ordersRes] = await Promise.all([
+        const [sessionRes, rostersRes, ordersRes] = await Promise.all([
           fetch("/api/auth/session"),
+          fetch("/api/rosters"),
           fetch(`/api/orders?date=${todayKey()}`),
         ]);
         const session = (await sessionRes.json()) as { classId?: string | null };
-        const data = (await ordersRes.json()) as { orders?: OrderJson[] };
+        const rosterData = (await rostersRes.json()) as { rosters?: RosterJson[] };
+        const nextRosters: Record<string, string[]> = {};
+        for (const r of rosterData.rosters ?? []) nextRosters[r.classId] = r.students;
         if (cancelled) return;
-        ordersRef.current = ordersFromServer(data.orders ?? []);
+        rostersRef.current = nextRosters;
+        setRosters(nextRosters);
+        const ordersData = (await ordersRes.json()) as { orders?: OrderJson[] };
+        if (cancelled) return;
+        ordersRef.current = ordersFromServer(ordersData.orders ?? [], nextRosters);
         setOrders(ordersRef.current);
         if (session.classId) {
           setSelectedClass(session.classId);
@@ -120,39 +162,48 @@ export default function Home() {
 
   useEffect(() => {
     if (screen !== "kitchen") return;
-    void loadOrders();
-    const timer = setInterval(() => void loadOrders(), 15000);
+    void loadRosters().then(() => loadOrders());
+    const timer = setInterval(() => {
+      void loadOrders();
+    }, 15000);
     return () => clearInterval(timer);
-  }, [screen, loadOrders]);
+  }, [screen, loadRosters, loadOrders]);
 
-  const saveOrder = useCallback(async (classKey: string, next: ClassOrder) => {
-    setSaveState("saving");
-    try {
-      const roster = getClass(classKey).students;
-      const marks = roster.map((s) => ({
-        name: s.name,
-        breakfast: next.meals[s.id]?.breakfast ?? false,
-        lunch: next.meals[s.id]?.lunch ?? false,
-      }));
-      const res = await fetch("/api/orders", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ marks, sent: next.sent }),
-      });
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const data = (await res.json()) as { order?: OrderJson };
-      if (data.order) {
-        const merged = ordersFromServer([data.order]);
-        if (merged[classKey]) {
-          applyOrders((prev) => ({ ...prev, [classKey]: merged[classKey] }));
-        }
+  const saveOrder = useCallback(
+    async (classKey: string, next: ClassOrder) => {
+      const roster = rostersRef.current[classKey];
+      if (!roster || roster.length === 0) {
+        setSaveState("error");
+        return;
       }
-      setSaveState("saved");
-      setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 2500);
-    } catch {
-      setSaveState("error");
-    }
-  }, [applyOrders]);
+      setSaveState("saving");
+      try {
+        const marks = roster.map((name, i) => ({
+          name,
+          breakfast: next.meals[i + 1]?.breakfast ?? false,
+          lunch: next.meals[i + 1]?.lunch ?? false,
+        }));
+        const res = await fetch("/api/orders", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ marks, sent: next.sent }),
+        });
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const data = (await res.json()) as { order?: OrderJson };
+        if (data.order) {
+          const merged = ordersFromServer([data.order], rostersRef.current);
+          if (merged[classKey]) {
+            applyOrders((prev) => ({ ...prev, [classKey]: merged[classKey] }));
+          }
+        }
+        setSaveState("saved");
+        setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 2500);
+      } catch {
+        setSaveState("error");
+      }
+    },
+    [applyOrders],
+  );
 
   const scheduleSave = useCallback(
     (classKey: string, next: ClassOrder) => {
@@ -235,6 +286,7 @@ export default function Home() {
     setSelectedClass(classKey);
     setRole("monitor");
     setScreen("monitor");
+    await loadRosters();
     await loadOrders();
     toast({
       title: `Вы вошли как староста ${classKey}`,
@@ -335,15 +387,15 @@ export default function Home() {
                 Обновить
               </Button>
             </div>
-            <KitchenDashboard orders={orders} />
+            <KitchenDashboard orders={orders} rosters={rosters} />
           </div>
         )}
       </main>
 
       <footer className="mt-auto border-t border-border bg-card/70">
         <div className="mx-auto w-full max-w-5xl px-4 py-4 text-xs font-medium text-muted-foreground sm:px-6">
-          ОбедКласс — заказы и коды классов хранятся на сервере. Классы с 5 по 11,
-          буквы от А до Д.
+          ОбедКласс — заказы, коды классов и составы классов хранятся на сервере.
+          Классы с 5 по 11, буквы от А до Д.
         </div>
       </footer>
     </div>

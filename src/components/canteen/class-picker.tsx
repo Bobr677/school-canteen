@@ -1,17 +1,18 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { ALL_CLASSES, GRADES, getClass } from "@/lib/school-data";
+import { ALL_CLASSES, GRADES } from "@/lib/school-data";
 import { cn } from "@/lib/utils";
 
 interface ClassPickerProps {
   selected: string;
   sentKeys: Set<string>;
+  rosterCounts?: Record<string, number>;
   onSelect: (key: string) => void;
 }
 
-export function ClassPicker({ selected, sentKeys, onSelect }: ClassPickerProps) {
-  const cls = getClass(selected);
+export function ClassPicker({ selected, sentKeys, rosterCounts, onSelect }: ClassPickerProps) {
+  const rosterSize = rosterCounts?.[selected];
 
   return (
     <section aria-label="Выбор класса" className="space-y-3">
@@ -36,6 +37,7 @@ export function ClassPicker({ selected, sentKeys, onSelect }: ClassPickerProps) 
         {ALL_CLASSES.map((c) => {
           const isSelected = c.key === selected;
           const isSent = sentKeys.has(c.key);
+          const n = rosterCounts?.[c.key];
           return (
             <button
               key={c.key}
@@ -49,7 +51,7 @@ export function ClassPicker({ selected, sentKeys, onSelect }: ClassPickerProps) 
                   ? "bg-primary text-primary-foreground"
                   : "bg-card text-foreground/80 hover:bg-accent hover:text-accent-foreground",
               )}
-              title={`${c.key} — ${c.students.length} учеников`}
+              title={n ? `${c.key} — ${n} учеников` : c.key}
             >
               {c.key}
               {isSent && (
@@ -73,7 +75,9 @@ export function ClassPicker({ selected, sentKeys, onSelect }: ClassPickerProps) 
       </div>
 
       <p className="px-1 text-xs font-bold text-muted-foreground sm:text-sm">
-        Выбран класс {cls.key}, в нём {cls.students.length} учеников.
+        {typeof rosterSize === "number"
+          ? `Выбран класс ${selected}, в нём ${rosterSize} учеников.`
+          : `Выбран класс ${selected}. Состав появится после регистрации класса.`}
       </p>
     </section>
   );

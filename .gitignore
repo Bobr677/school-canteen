@@ -57,6 +57,7 @@ server.log
 /download/
 /db/
 /upload/
+/scripts/
 /.zscripts/
 /examples/
 /mini-services/
@@ -66,3 +67,5 @@ server.log
 /worklog.md
 /repo-*/
 /rebrand-assets/
+/.agents/
+/agent/

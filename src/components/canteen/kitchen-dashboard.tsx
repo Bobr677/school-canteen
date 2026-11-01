@@ -8,9 +8,10 @@ type Filter = "all" | "sent" | "waiting";
 
 interface KitchenDashboardProps {
   orders: Record<string, ClassOrder>;
+  rosters?: Record<string, string[]>;
 }
 
-export function KitchenDashboard({ orders }: KitchenDashboardProps) {
+export function KitchenDashboard({ orders, rosters }: KitchenDashboardProps) {
   const [filter, setFilter] = useState<Filter>("all");
 
   const stats = useMemo(() => {
@@ -112,7 +113,9 @@ export function KitchenDashboard({ orders }: KitchenDashboardProps) {
               </span>
 
               <span className="min-w-0 flex-1 text-xs font-medium text-muted-foreground sm:text-sm">
-                {cls.grade} класс, {cls.students.length} учеников
+                {typeof rosters?.[cls.key] === "object"
+                  ? `${cls.grade} класс, ${rosters[cls.key].length} учеников`
+                  : `${cls.grade} класс, состав ещё не зарегистрирован`}
               </span>
 
               <div className="flex items-center gap-5">

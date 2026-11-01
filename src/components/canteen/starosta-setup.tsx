@@ -1,22 +1,26 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
   Eye,
   EyeOff,
   KeyRound,
   Loader2,
+  Minus,
+  Plus,
   UserCheck,
+  Users,
 } from "lucide-react";
 import { OTPInputContext, REGEXP_ONLY_DIGITS } from "input-otp";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup } from "@/components/ui/input-otp";
 import { cn } from "@/lib/utils";
 import { ClassPicker } from "./class-picker";
-import { getClass } from "@/lib/school-data";
+import { getClassInfo, MAX_STUDENTS, MIN_STUDENTS } from "@/lib/school-data";
 
 interface StarostaSetupProps {
   sentKeys: Set<string>;
@@ -25,28 +29,83 @@ interface StarostaSetupProps {
 }
 
 type Mode = "idle" | "checking" | "create" | "login";
+type CreateStep = "pin" | "roster";
+
+const NAME_RE = /^[А-ЯЁ][а-яё]+(?:-[А-ЯЁ][а-яё]+)?( [А-ЯЁ][а-яё]+(?:-[А-ЯЁ][а-яё]+)?){1,2}$/;
+
+function normalizeName(raw: string): string {
+  return raw.replace(/\s+/g, " ").trim();
+}
+
+function isValidName(raw: string): boolean {
+  return NAME_RE.test(normalizeName(raw));
+}
 
 export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupProps) {
   const [classKey, setClassKey] = useState("");
   const [mode, setMode] = useState<Mode>("idle");
+  const [createStep, setCreateStep] = useState<CreateStep>("pin");
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
   const [showPin, setShowPin] = useState(false);
+  const [count, setCount] = useState(MIN_STUDENTS);
+  const [names, setNames] = useState<string[]>(() => Array(MIN_STUDENTS).fill(""));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const nameRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const tooShort = pin.length > 0 && pin.length < 6;
   const mismatch = pin2.length === 6 && pin !== pin2;
-  const cls = classKey ? getClass(classKey) : null;
+  const cls = classKey ? getClassInfo(classKey) : null;
+
+  const filled = names.map(normalizeName);
+  const invalidRows = filled.map((n) => n !== "" && !isValidName(n));
+  const invalidCount = invalidRows.filter(Boolean).length;
+  const emptyCount = filled.filter((n) => n === "").length;
+
+  const dupName = (() => {
+    const seen = new Set<string>();
+    for (const n of filled) {
+      if (!isValidName(n)) continue;
+      const key = n.toLowerCase();
+      if (seen.has(key)) return n;
+      seen.add(key);
+    }
+    return null;
+  })();
+
+  const pinReady = pin.length === 6 && pin === pin2;
+  const rosterReady = count === names.length && invalidCount === 0 && emptyCount === 0 && !dupName;
 
   const canSubmit =
-    !busy && classKey !== "" && (mode === "login" ? pin.length === 6 : pin.length === 6 && pin === pin2);
+    !busy && classKey !== "" && (mode === "login" ? pin.length === 6 : pinReady && rosterReady);
+
+  function changeCount(next: number) {
+    const clamped = Math.min(MAX_STUDENTS, Math.max(MIN_STUDENTS, next));
+    setCount(clamped);
+    setNames((prev) => {
+      if (clamped === prev.length) return prev;
+      if (clamped < prev.length) return prev.slice(0, clamped);
+      return [...prev, ...Array(clamped - prev.length).fill("")];
+    });
+    setError("");
+  }
+
+  function setName(index: number, value: string) {
+    setNames((prev) => prev.map((v, i) => (i === index ? value : v)));
+    setError("");
+  }
+
+  function focusName(index: number) {
+    nameRefs.current[index]?.focus();
+  }
 
   async function pickClass(key: string) {
     setClassKey(key);
     setPin("");
     setPin2("");
     setError("");
+    setCreateStep("pin");
     setMode("checking");
     try {
       const res = await fetch(`/api/auth/status?classId=${encodeURIComponent(key)}`);
@@ -68,7 +127,11 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
         const res = await fetch("/api/auth/setup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ classId: classKey, pin }),
+          body: JSON.stringify({
+            classId: classKey,
+            pin,
+            students: filled.filter((n) => isValidName(n)),
+          }),
         });
         if (res.status === 409) {
           setMode("login");
@@ -79,7 +142,7 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
         }
         if (!res.ok) {
           const data = (await res.json().catch(() => ({}))) as { error?: string };
-          setError(data.error ?? "Не получилось создать код. Попробуйте ещё раз.");
+          setError(data.error ?? "Не получилось зарегистрировать класс. Попробуйте ещё раз.");
           return;
         }
         onComplete(classKey);
@@ -112,8 +175,8 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
             Вход для старосты
           </h2>
           <p className="mt-1 max-w-2xl text-sm font-medium text-muted-foreground sm:text-base">
-            Выберите свой класс. Если код ещё не создан — придумайте его, он сохранится
-            на сервере и станет паролем класса.
+            Выберите свой класс. Если код ещё не создан — придумайте его и впишите
+            состав класса: сколько учеников и их фамилии с именами.
           </p>
         </div>
         <Button
@@ -129,7 +192,13 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
       <ClassPicker selected={classKey || "5А"} sentKeys={sentKeys} onSelect={pickClass} />
 
       <section
-        aria-label={mode === "login" ? "Введите код класса" : "Придумайте код-пароль"}
+        aria-label={
+          mode === "login"
+            ? "Введите код класса"
+            : mode === "create" && createStep === "roster"
+              ? "Состав класса"
+              : "Придумайте код-пароль"
+        }
         className="rounded-lg border border-border bg-card p-4 sm:p-6"
       >
         {mode === "login" ? (
@@ -176,6 +245,108 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
               ) : (
                 tooShort && <p className="text-xs font-bold text-destructive">Введите все 6 цифр</p>
               )}
+            </div>
+          </>
+        ) : mode === "create" && createStep === "roster" ? (
+          <>
+            <h3 className="flex items-center gap-2 text-base font-extrabold sm:text-lg">
+              <Users className="h-5 w-5 text-primary" aria-hidden />
+              Состав класса {cls ? cls.key : ""}
+            </h3>
+            <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
+              Выберите, сколько учеников в классе, и впишите фамилию и имя каждого.
+              Первый в списке — тот, кто регистрирует класс.
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="Убрать ученика"
+                  disabled={count <= MIN_STUDENTS}
+                  onClick={() => changeCount(count - 1)}
+                  className="h-11 w-11 rounded-md"
+                >
+                  <Minus className="h-4 w-4" aria-hidden />
+                </Button>
+                <span
+                  aria-live="polite"
+                  className="min-w-[3.5rem] text-center text-3xl font-black tabular-nums tracking-tight"
+                >
+                  {count}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="Добавить ученика"
+                  disabled={count >= MAX_STUDENTS}
+                  onClick={() => changeCount(count + 1)}
+                  className="h-11 w-11 rounded-md"
+                >
+                  <Plus className="h-4 w-4" aria-hidden />
+                </Button>
+              </div>
+              <p className="text-xs font-bold text-muted-foreground sm:text-sm">
+                учеников в классе — можно от {MIN_STUDENTS} до {MAX_STUDENTS}
+              </p>
+            </div>
+
+            <ol className="nice-scroll mt-4 max-h-[28rem] divide-y divide-border overflow-y-auto rounded-md border border-border">
+              {names.map((value, i) => {
+                const invalid = invalidRows[i];
+                return (
+                  <li key={i} className="flex items-center gap-3 px-3 py-2 sm:px-4">
+                    <span className="w-6 shrink-0 text-right text-xs font-semibold tabular-nums text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    <input
+                      ref={(el) => {
+                        nameRefs.current[i] = el;
+                      }}
+                      value={value}
+                      onChange={(e) => setName(i, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          focusName(Math.min(i + 1, names.length - 1));
+                        }
+                      }}
+                      placeholder="Фамилия Имя"
+                      autoComplete="off"
+                      aria-label={`Ученик ${i + 1}: фамилия и имя`}
+                      data-invalid={invalid || undefined}
+                      className={cn(
+                        "h-11 w-full rounded-md border bg-background px-3 text-sm font-bold outline-none transition-colors placeholder:font-medium placeholder:text-muted-foreground/60 focus:border-ring focus:ring-2 focus:ring-ring/30 sm:text-[15px]",
+                        invalid
+                          ? "border-destructive text-destructive"
+                          : "border-border text-foreground",
+                      )}
+                    />
+                  </li>
+                );
+              })}
+            </ol>
+
+            <div className="mt-3 space-y-1.5">
+              {invalidCount > 0 && (
+                <p className="text-xs font-bold text-destructive">
+                  Проверьте выделенные строки: формат — Фамилия Имя, например Иванов Артём.
+                </p>
+              )}
+              {dupName && (
+                <p className="text-xs font-bold text-destructive">
+                  Ученик указан дважды: {dupName}.
+                </p>
+              )}
+              {!invalidCount && !dupName && emptyCount > 0 && (
+                <p className="text-xs font-bold text-muted-foreground">
+                  Заполнено {count - emptyCount} из {count}. Осталось вписать: {emptyCount}.
+                </p>
+              )}
+              {error && <p className="text-xs font-bold text-destructive">{error}</p>}
             </div>
           </>
         ) : (
@@ -271,41 +442,73 @@ export function StarostaSetup({ sentKeys, onBack, onComplete }: StarostaSetupPro
             ) : cls ? (
               mode === "login" ? (
                 <>
-                  Вход как староста <span className="text-foreground">{cls.key}</span>, в классе{" "}
-                  {cls.students.length} учеников
+                  Вход как староста <span className="text-foreground">{cls.key}</span>
+                </>
+              ) : createStep === "roster" ? (
+                <>
+                  Регистрация класса <span className="text-foreground">{cls.key}</span>, учеников:{" "}
+                  <span className="text-foreground">{count}</span>
                 </>
               ) : (
                 <>
-                  Регистрация класса <span className="text-foreground">{cls.key}</span>, в классе{" "}
-                  {cls.students.length} учеников
+                  Регистрация класса <span className="text-foreground">{cls.key}</span>, дальше
+                  вписываем состав
                 </>
               )
             ) : (
               "Сначала выберите класс"
             )}
           </p>
-          <Button
-            size="lg"
-            onClick={submit}
-            disabled={!canSubmit}
-            className="min-h-[48px] rounded-md px-6 text-base font-extrabold"
-          >
-            {busy ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-                {mode === "login" ? "Входим…" : "Создаём код…"}
-              </>
-            ) : (
-              <>
-                <UserCheck className="h-5 w-5" aria-hidden />
-                {mode === "login" ? (
-                  <>Войти как староста{cls ? ` ${cls.key}` : ""}</>
-                ) : (
-                  <>Создать код и войти{cls ? ` ${cls.key}` : ""}</>
-                )}
-              </>
+          <div className="flex flex-wrap items-center gap-2">
+            {mode === "create" && createStep === "roster" && (
+              <Button
+                variant="outline"
+                onClick={() => setCreateStep("pin")}
+                disabled={busy}
+                className="min-h-[48px] rounded-md px-4 text-sm font-extrabold"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                К коду
+              </Button>
             )}
-          </Button>
+            <Button
+              size="lg"
+              onClick={() => {
+                if (mode === "create" && createStep === "pin") {
+                  if (!pinReady) return;
+                  setError("");
+                  setCreateStep("roster");
+                  setTimeout(() => focusName(0), 50);
+                  return;
+                }
+                void submit();
+              }}
+              disabled={mode === "create" && createStep === "pin" ? !pinReady || busy : !canSubmit}
+              className="min-h-[48px] rounded-md px-6 text-base font-extrabold"
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                  {mode === "login" ? "Входим…" : "Сохраняем…"}
+                </>
+              ) : mode === "login" ? (
+                <>
+                  <UserCheck className="h-5 w-5" aria-hidden />
+                  Войти как староста{cls ? ` ${cls.key}` : ""}
+                </>
+              ) : createStep === "pin" ? (
+                <>
+                  Дальше: состав класса
+                  <ArrowRight className="h-5 w-5" aria-hidden />
+                </>
+              ) : (
+                <>
+                  <UserCheck className="h-5 w-5" aria-hidden />
+                  Сохранить и войти{cls ? ` ${cls.key}` : ""}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </section>
 
